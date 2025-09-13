@@ -1,5 +1,6 @@
 import React from 'react';
 import Dashboard from './components/Dashboard';
+import './i18n';
 
 function App() {
   return (
