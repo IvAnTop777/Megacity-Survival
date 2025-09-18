@@ -84,7 +84,7 @@ export default function CharacterDashboard() {
   // Состояния
   const [view, setView] = useState('Profile');
   const [data, setData] = useState(null); // { profile: {...}, resources: {...} }
-  const [showFirstRunModal, setShowFirstRunModal] = useState(!localStorage.getItem('character'));
+  const [showFirstRunModal, setShowFirstRunModal] = useState(false);
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -94,16 +94,14 @@ export default function CharacterDashboard() {
   // Гидратация из ключа
   const hydrateFromCharacter = useCallback((key) => {
     if (key && CHARACTERS[key]) {
-      setData({
-        profile: { ...CHARACTERS[key] },
-        resources: { ...BASE_RESOURCES }
-      });
+      const character = CHARACTERS[key];
+      setData(character.profile);
+      setResources(character.resources || BASE_RESOURCES);
       return true;
     }
     return false;
   }, []);
-
-  // Инициализация при монтировании
+    // Инициализация при монтировании
   useEffect(() => {
     const saved = localStorage.getItem("character");
     if (saved) {
@@ -113,12 +111,8 @@ export default function CharacterDashboard() {
       setShowFirstRunModal(true);
     }
   
-    // снимаем "loading" через 1.5 секунды
     const timer = setTimeout(() => setLoading(false), 1500);
-  
-    return () => {
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [hydrateFromCharacter]);
 
   // Обработчики выбора
@@ -153,11 +147,18 @@ export default function CharacterDashboard() {
     );
   }
   
-  if (!data && !showFirstRunModal) {
-    // Если данных нет и модалка не открыта — аварийный fallback
+  if (loading) {
     return (
       <div style={styles.page}>
-        <div style={{ marginTop: 100 }}>Нет данных персонажа 🕵️‍♂️</div>
+        <div style={{ marginTop: 100 }}>Загрузка… ⏳</div>
+      </div>
+    );
+  }
+  
+  if (!data && !showFirstRunModal) {
+    return (
+      <div style={styles.page}>
+        <div style={{ marginTop: 100 }}>Нет данных персонажа 🧍</div>
       </div>
     );
   }
