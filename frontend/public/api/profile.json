@@ -1,0 +1,11 @@
+{
+  "avatar": "/avatars/seer_female.png",
+  "name":   "Visionary",
+  "class":  "Seer",
+  "gender": "Female",
+  "level":  9,
+  "strength":      20,
+  "intelligence":  80,
+  "reaction":      50,
+  "to_next_level": 100
+}
