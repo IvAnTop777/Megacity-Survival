@@ -1,0 +1,23 @@
+{
+  "connect_wallet": "Подключить кошелёк",
+  "only_for_humans": "Только для людей",
+  "human": "ЧЕЛОВЕК",
+  "megacity": "МЕГАСИТИ",
+  "character_profile": "Профиль персонажа",
+  "name": "Имя",
+  "class": "Класс",
+  "gender": "Пол",
+  "strength": "Сила",
+  "intelligence": "Интеллект",
+  "reaction": "Реакция",
+  "to_next_level": "До следующего уровня",
+  "light": "Светоч",
+  "energy": "Энергия",
+  "crystals": "Кристаллы",
+  "city_phase": "Фаза города",
+  "profile": "Профиль",
+  "city": "Город",
+  "raid": "Рейд",
+  "world": "Мир",
+  "tasks": "Задания"
+}

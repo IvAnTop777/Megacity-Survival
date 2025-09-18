@@ -1,0 +1,23 @@
+{
+  "connect_wallet": "连接钱包",
+  "only_for_humans": "仅限人类",
+  "human": "人类",
+  "megacity": "超级城市",
+  "character_profile": "角色资料",
+  "name": "名称",
+  "class": "职业",
+  "gender": "性别",
+  "strength": "力量",
+  "intelligence": "智力",
+  "reaction": "反应",
+  "to_next_level": "距离下一级",
+  "light": "光",
+  "energy": "能量",
+  "crystals": "水晶",
+  "city_phase": "城市阶段",
+  "profile": "资料",
+  "city": "城市",
+  "raid": "突袭",
+  "world": "世界",
+  "tasks": "任务"
+}
