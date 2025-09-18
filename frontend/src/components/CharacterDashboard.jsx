@@ -115,7 +115,10 @@ export default function CharacterDashboard() {
   
     // снимаем "loading" через 1.5 секунды
     const timer = setTimeout(() => setLoading(false), 1500);
-    return () => clearTimeout(timer);
+  
+    return () => {
+      clearTimeout(timer);
+    };
   }, [hydrateFromCharacter]);
 
   // Обработчики выбора
@@ -139,7 +142,25 @@ export default function CharacterDashboard() {
       </div>
     );
   }
-
+  if (!data && showFirstRunModal) {
+    // Показываем модалку выбора персонажа
+    return (
+      <div style={styles.page}>
+        <div style={{ marginTop: 100 }}>
+          {/* Здесь у тебя уже есть компонент модалки выбора */}
+        </div>
+      </div>
+    );
+  }
+  
+  if (!data && !showFirstRunModal) {
+    // Если данных нет и модалка не открыта — аварийный fallback
+    return (
+      <div style={styles.page}>
+        <div style={{ marginTop: 100 }}>Нет данных персонажа 🕵️‍♂️</div>
+      </div>
+    );
+  }
   return (
     <div style={styles.page}>
       {/* Модалка первого запуска */}
