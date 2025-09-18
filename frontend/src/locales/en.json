@@ -1,0 +1,23 @@
+{
+  "connect_wallet": "Connect Wallet",
+  "only_for_humans": "Only for humans",
+  "human": "HUMAN",
+  "megacity": "MEGACITY",
+  "character_profile": "Character Profile",
+  "name": "Name",
+  "class": "Class",
+  "gender": "Gender",
+  "strength": "Strength",
+  "intelligence": "Intelligence",
+  "reaction": "Reaction",
+  "to_next_level": "To Next Level",
+  "light": "Light",
+  "energy": "Energy",
+  "crystals": "Crystals",
+  "city_phase": "City Phase",
+  "profile": "Profile",
+  "city": "City",
+  "raid": "Raid",
+  "world": "World",
+  "tasks": "Tasks"
+}
