@@ -86,6 +86,7 @@ export default function CharacterDashboard() {
   const [data, setData] = useState(null); // { profile: {...}, resources: {...} }
   const [showFirstRunModal, setShowFirstRunModal] = useState(!localStorage.getItem('character'));
   const [showChangeModal, setShowChangeModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Нормализация процентов
   const clamp = (v) => Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
@@ -104,14 +105,17 @@ export default function CharacterDashboard() {
 
   // Инициализация при монтировании
   useEffect(() => {
-    const saved = localStorage.getItem('character');
+    const saved = localStorage.getItem("character");
     if (saved) {
       hydrateFromCharacter(saved);
       setShowFirstRunModal(false);
     } else {
-      // Если нет выбора — показываем модалку первого запуска
       setShowFirstRunModal(true);
     }
+  
+    // снимаем "loading" через 1.5 секунды
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
   }, [hydrateFromCharacter]);
 
   // Обработчики выбора
@@ -128,10 +132,10 @@ export default function CharacterDashboard() {
   };
 
   // Прелоадер, если данных ещё нет и не идёт первичная модалка
-  if (!data && !showFirstRunModal) {
+  if (loading) {
     return (
       <div style={styles.page}>
-        <div style={{ marginTop: 100 }}>Loading… ⏳</div>
+        <div style={{ marginTop: 100 }}>Загрузка… ⏳</div>
       </div>
     );
   }
