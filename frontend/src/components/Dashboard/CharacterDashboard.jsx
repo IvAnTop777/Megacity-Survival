@@ -50,7 +50,7 @@ export default function CharacterDashboard() {
       hydrateFromCharacter(keys[0]);
     }
   }, [hydrateFromCharacter]);
-
+  
   const handleSwitchCharacter = (dir = 'next') => {
     if (!profiles.length) return;
     setCurrent((prev) => {
@@ -61,7 +61,7 @@ export default function CharacterDashboard() {
       return next;
     });
   };
-
+  
   // ... дальше твой return  
     // Если есть персонажи — выбираем первого по умолчанию
     if (keys.length > 0) {
