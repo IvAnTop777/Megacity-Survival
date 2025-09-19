@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { CHARACTERS } from '../Character/characters';
 import CharacterView from '../Character/CharacterView';
 
-// Вверху файла (рядом с BASE_RESOURCES)
+// Константы
 const VIEWS = ['Profile', 'City', 'Raid', 'World', 'Tasks'];
 const BASE_RESOURCES = { light: 0, energy: 0, crystals: 100, city_phase: 0 };
 
+// Построение карты персонажей по id
 const CHAR_MAP = CHARACTERS.reduce((acc, c) => {
   acc[c.id] = {
     avatar: c.avatar,
@@ -21,86 +22,99 @@ const CHAR_MAP = CHARACTERS.reduce((acc, c) => {
 }, {});
 
 export default function CharacterDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Состояния
   const [view, setView] = useState('home');
-  const [profiles, setProfiles] = useState([]);   // список персонажей
-  const [current, setCurrent] = useState(0);      // индекс текущего
+  const [profiles, setProfiles] = useState([]);     // один активный профиль в profiles[0]
+  const [current, setCurrent] = useState(0);        // индекс по ключам CHAR_MAP
+  const [resources, setResources] = useState({ ...BASE_RESOURCES });
   const [showFirstRunModal, setShowFirstRunModal] = useState(!localStorage.getItem('character'));
 
+  // Гидратация из CHAR_MAP по ключу
   const hydrateFromCharacter = useCallback((key) => {
     if (key && CHAR_MAP[key]) {
       const profile = { ...CHAR_MAP[key] };
-      setProfiles([profile]);   // кладём в массив
-      setCurrent(0);
-      setData({
-        profile,
-        resources: { ...BASE_RESOURCES },
-      });
+      setProfiles([profile]);                 // держим одного активного
+      setResources({ ...BASE_RESOURCES });    // сброс ресурсов при смене
       return true;
     }
     return false;
   }, []);
 
+  // Стартовая загрузка: восстановить сохранённого или выбрать первого (fallback)
   useEffect(() => {
-    const keys = Object.keys(CHAR_MAP);
     const saved = localStorage.getItem('character');
+    const keys = Object.keys(CHAR_MAP);
+
     if (saved && CHAR_MAP[saved]) {
       hydrateFromCharacter(saved);
-    } else if (keys.length) {
-      hydrateFromCharacter(keys[0]);
-    }
-  }, [hydrateFromCharacter]);
-  
-  const handleSwitchCharacter = (dir = 'next') => {
-    if (!profiles.length) return;
-    setCurrent((prev) => {
-      const next =
-        dir === 'prev'
-          ? (prev - 1 + profiles.length) % profiles.length
-          : (prev + 1) % profiles.length;
-      return next;
-    });
-  };
-  
-  // ... дальше твой return  
-    // Если есть персонажи — выбираем первого по умолчанию
-    if (keys.length > 0) {
-      const first = keys[0];
-      localStorage.setItem('character', first);
-      hydrateFromCharacter(first);
+      setCurrent(Math.max(0, keys.indexOf(saved)));
       setShowFirstRunModal(false);
       return;
     }
-  
-    // Если персонажей нет (защита от пустого списка)
-    setShowFirstRunModal(true);
+
+    if (!keys.length) {
+      // Нет персонажей — показываем модалку
+      setShowFirstRunModal(true);
+      return;
+    }
+
+    // Fallback: чтобы не висеть на Loading — выбираем первого
+    const first = keys[0];
+    localStorage.setItem('character', first);
+    hydrateFromCharacter(first);
+    setCurrent(0);
+    setShowFirstRunModal(false);
   }, [hydrateFromCharacter]);
-  
+
+  // Переключение персонажа по кругу
+  const handleSwitchCharacter = (dir = 'next') => {
+    const keys = Object.keys(CHAR_MAP);
+    if (!keys.length) return;
+
+    setCurrent((prev) => {
+      const safePrev = Number.isInteger(prev) ? prev : 0;
+      const nextIndex =
+        dir === 'prev'
+          ? (safePrev - 1 + keys.length) % keys.length
+          : (safePrev + 1) % keys.length;
+
+      const nextKey = keys[nextIndex];
+      localStorage.setItem('character', nextKey);
+      hydrateFromCharacter(nextKey);
+      return nextIndex;
+    });
+  };
+
+  // Выбор персонажа из модалки первого запуска
   const handlePickFirstRun = (key) => {
+    if (!CHAR_MAP[key]) return;
+    const keys = Object.keys(CHAR_MAP);
     localStorage.setItem('character', key);
     hydrateFromCharacter(key);
+    setCurrent(Math.max(0, keys.indexOf(key)));
     setShowFirstRunModal(false);
   };
 
+  // Апгрейд текущего персонажа
   const handleUpgrade = () => {
-    setData((prev) =>
-      prev
-        ? {
-            ...prev,
-            profile: {
-              ...prev.profile,
-              level: (prev.profile.level ?? 1) + 1,
-              strength: Math.min((prev.profile.strength ?? 0) + 5, 100),
-              intelligence: Math.min((prev.profile.intelligence ?? 0) + 5, 100),
-              reaction: Math.min((prev.profile.reaction ?? 0) + 5, 100),
-              rage: Math.min((prev.profile.rage ?? 0) + 5, 100),
-            },
-          }
-        : prev
-    );
+    if (!profiles.length) return;
+    setProfiles((prev) => {
+      const next = [...prev];
+      const cur = { ...next[0] };
+      cur.level = (cur.level ?? 1) + 1;
+      cur.strength = Math.min((cur.strength ?? 0) + 5, 100);
+      cur.intelligence = Math.min((cur.intelligence ?? 0) + 5, 100);
+      cur.reaction = Math.min((cur.reaction ?? 0) + 5, 100);
+      cur.rage = Math.min((cur.rage ?? 0) + 5, 100);
+      next[0] = cur;
+      return next;
+    });
   };
 
-  if (!data && !showFirstRunModal) {
+  // Лоадер: если нет профилей и нет модалки — ждём инициализации
+  if (!profiles.length && !showFirstRunModal) {
     return (
       <div style={styles.page}>
         <div style={{ marginTop: 100 }}>Loading… ⏳</div>
@@ -127,62 +141,64 @@ export default function CharacterDashboard() {
         </div>
       )}
 
-{/* Верхняя панель: язык + Connect Wallet */}
-<div style={styles.topbar}>
-  <select
-    style={styles.select}
-    value={i18n.resolvedLanguage || i18n.language || 'en'}
-    onChange={(e) => i18n.changeLanguage(e.target.value)}
-  >
-    <option value="en">EN</option>
-    <option value="ru">RU</option>
-    <option value="vi">VI</option>
-    <option value="zh">ZH</option>
-  </select>
-  <button style={styles.button}>{t('connect_wallet') || 'Connect Wallet'}</button>
-</div>
+      {/* Верхняя панель: язык + Connect Wallet */}
+      <div style={styles.topbar}>
+        <select
+          style={styles.select}
+          value={i18n.resolvedLanguage || i18n.language || 'en'}
+          onChange={(e) => i18n.changeLanguage(e.target.value)}
+        >
+          <option value="en">EN</option>
+          <option value="ru">RU</option>
+          <option value="vi">VI</option>
+          <option value="zh">ZH</option>
+        </select>
+        <button style={styles.button}>{t('connect_wallet') || 'Connect Wallet'}</button>
+      </div>
 
-{/* Лого MEGACITY + Humanode */}
-<div style={styles.logo}>
-  <h1 style={styles.logoText}>{t('megacity') || 'MEGACITY'}</h1>
-  <img
-    src={`${process.env.PUBLIC_URL || ''}/logo_humanode.png`}
-    alt="Humanode"
-    height={28}
-  />
-</div>
-{/* Only for humans + ALPHA */}
-<div style={styles.humanLine}>
-  <span>{t('only_for_humans') || 'Only for humans'}</span>
-  <span
-    style={{
-      background: '#2f2b1f',
-      color: '#eaeffc',
-      padding: '2px 8px',
-      border: '1px solid #eaeffc',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      fontFamily: 'monospace',
-      marginLeft: '12px',
-      borderRadius: 6
-    }}
-  >
-    {t('alpha') || 'ALPHA'}
-  </span>
-</div>
+      {/* Лого MEGACITY + Humanode */}
+      <div style={styles.logo}>
+        <h1 style={styles.logoText}>{t('megacity') || 'MEGACITY'}</h1>
+        <img
+          src={`${process.env.PUBLIC_URL || ''}/logo_humanode.png`}
+          alt="Humanode"
+          height={28}
+        />
+      </div>
+
+      {/* Only for humans + ALPHA */}
+      <div style={styles.humanLine}>
+        <span>{t('only_for_humans') || 'Only for humans'}</span>
+        <span
+          style={{
+            background: '#2f2b1f',
+            color: '#eaeffc',
+            padding: '2px 8px',
+            border: '1px solid #eaeffc',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            fontFamily: 'monospace',
+            marginLeft: '12px',
+            borderRadius: 6
+          }}
+        >
+          {t('alpha') || 'ALPHA'}
+        </span>
+      </div>
 
       {/* Секция персонажа */}
-      {data && (
+      {profiles.length > 0 && (
         <section style={styles.section}>
           <div style={styles.card}>
-          <CharacterView
-          character={profiles[current]}
-          onChange={handleSwitchCharacter}   // ← рабочий хэндлер
-          onUpgrade={handleUpgrade}
-          />
+            <CharacterView
+              character={profiles[0]}
+              onChange={handleSwitchCharacter}
+              onUpgrade={handleUpgrade}
+            />
           </div>
-          {/* Подпись как на скрине (плейсхолдер) */}
-          <div style={styles.noteText}>{t('character_placeholder') || 'Здесь будет информация о персонаже'}</div>
+          <div style={styles.noteText}>
+            {t('character_placeholder') || 'Здесь будет информация о персонаже'}
+          </div>
         </section>
       )}
 
@@ -190,8 +206,10 @@ export default function CharacterDashboard() {
       <section style={styles.section}>
         <div style={styles.sectionHeader}>{t('resources_view') || 'Resources View'}</div>
         <div style={styles.card}>
-          {/* Плейсхолдер как на скрине */}
-          <div style={styles.noteText}>{t('resources_placeholder') || 'Здесь будут ресурсы'}</div>
+          <div style={styles.noteText}>
+            {t('resources_placeholder') || 'Здесь будут ресурсы'}
+          </div>
+          <pre style={{ marginTop: 8 }}>{JSON.stringify(resources, null, 2)}</pre>
         </div>
       </section>
 
@@ -281,6 +299,12 @@ const styles = {
     width: '100%',
   },
 
+  sectionHeader: {
+    marginBottom: 8,
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+  },
+
   card: {
     background: '#0b0b0b',
     border: '1px solid #1e1e1e',
@@ -317,4 +341,54 @@ const styles = {
     letterSpacing: '0.08em',
     color: active ? '#00ffcc' : '#9aa0a6',
   }),
+
+  // Модалка
+  modal: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: 16,
+  },
+
+  modalContent: {
+    background: '#0b0b0b',
+    border: '1px solid #1e1e1e',
+    borderRadius: 10,
+    padding: 16,
+    maxWidth: 520,
+    width: '100%',
+  },
+
+  avatarGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 12,
+    marginTop: 12,
+  },
+
+  pickCard: {
+    background: '#111',
+    border: '1px solid #1e1e1e',
+    borderRadius: 8,
+    padding: 8,
+    cursor: 'pointer',
+    color: '#ececec',
+  },
+
+  avatarOption: {
+    width: '100%',
+    height: 90,
+    objectFit: 'cover',
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+
+  pickName: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
 };
